@@ -8,3 +8,5 @@ secret*
 #env
 bot
 bot/*
+env/*
+env
