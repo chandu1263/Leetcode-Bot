@@ -20,6 +20,10 @@ async def on_message(message):
 		user_id = message.author.id
 		command = parse(message.content)
 		
+		if command[0] == "ping":
+			await message.channel.send("pong!")
+			return
+
 		if command[0] == "register": #reigster request
 			if len(command) > 2: #invalid request
 				await message.channel.send("Invalid request!")
@@ -82,8 +86,3 @@ async def on_message(message):
 				
 
 client.run(os.getenv('TOKEN'))
-
-'''
-<Message id=855859088202006538 channel=<TextChannel id=855851138049507360 name='general' position=0 nsfw=False news=False category_id=855851138049507358> type=<MessageType.default: 0> author=<Member id=632171686807994371 name='longshot_007' discriminator='4675' bot=False nick=None guild=<Guild id=855851137604517959 name='Testing' shard_id=None chunked=False member_count=3>> flags=<MessageFlags value=0>>
-<Message id=855859088742285346 channel=<TextChannel id=855851138049507360 name='general' position=0 nsfw=False news=False category_id=855851138049507358> type=<MessageType.default: 0> author=<Member id=855851833020776458 name='leetcode bot' discriminator='5902' bot=True nick=None guild=<Guild id=855851137604517959 name='Testing' shard_id=None chunked=False member_count=3>> flags=<MessageFlags value=0>>
-'''
