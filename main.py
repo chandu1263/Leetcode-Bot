@@ -3,6 +3,7 @@ import discord
 
 from parser import parse, get_username
 from database import *
+from bot_embeds import get_question_embed
 
 client = discord.Client()
 
@@ -83,6 +84,30 @@ async def on_message(message):
 					return
 				await message.channel.send("moderator added successfully!")
 				return
-				
+
+		if command[0] == "post":
+
+			if len(command) > 1: # invalid request
+				await message.channel.send("Invalid request!")
+				return	
+
+			if not is_moderator(user_id): # question requested by not moderator
+				await message.channel.send("You don't have access to post a question!")
+				return
+
+			result = get_next_question()
+			if result["status"] == "failure": # internal server error
+				await message.channel.send("Bot is down, please reach out to bot owner")
+				return
+
+			if result["question"] == -1: # all the questions in database are posted
+				await message.channel.send("No more questions, add a new question")
+				return
+
+			with open("temp/posted.txt", "a") as f:
+				f.write(str(result["question"]) + "\n")
+			add_to_posted(message.id)
+			await message.channel.send(embed=get_question_embed(result["question"], result["intro"], result["level"], result["acceptance"], result["points"]))
+			return 
 
 client.run(os.getenv('TOKEN'))

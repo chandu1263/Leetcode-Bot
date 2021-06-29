@@ -1,3 +1,5 @@
+import time
+
 import mysql.connector
 
 from secret import mysql_host, mysql_password, mysql_port, mysql_user, mysql_db
@@ -120,6 +122,96 @@ def get_moderators():
             moderators.append(userid)
         result["status"] = "success"
         result["moderators"] = moderators
+        return result
+    except Exception as e:
+        print(e)
+        result["status"] = "failure"
+        result["reason"] = "Database connection error"
+        return result
+
+
+def is_moderator(userid):
+    try:
+        lc_db = mysql.connector.connect(
+                host = mysql_host,
+                user = mysql_user,
+                password = mysql_password,
+                database = mysql_db
+            )
+        cursor = lc_db.cursor()
+
+        query = "SELECT * FROM moderators"
+        cursor.execute(query)
+
+        for id, user_id in cursor:
+            if user_id == str(userid):
+                return True
+        return False
+
+    except Exception as e:
+        print(e)
+        return False
+
+def get_next_question():
+
+    def get_posted_questions():
+        questions = []
+        with open("temp/posted.txt", "r") as f:
+            for line in f:
+                line = line.strip()
+                if len(line) != 0:
+                    questions.append(int(line))
+        return questions
+    result = {}
+    try:
+        lc_db = mysql.connector.connect(
+            host = mysql_host,
+            user = mysql_user,
+            password = mysql_password,
+            database = mysql_db
+        )
+        cursor = lc_db.cursor()
+        query = "SELECT * FROM questions ORDER BY points ASC"
+        cursor.execute(query)
+        posted_questions = get_posted_questions()
+        for id, url, intro, level, acceptance, points  in cursor:
+            if id not in posted_questions:
+                result["status"] = "success"
+                result["question"] = id
+                result["intro"] = intro
+                result["url"] = url
+                result["level"] = level
+                result["acceptance"] = acceptance
+                result["points"] = points
+                return result
+        result["status"] = "success"
+        result["id"] = -1
+        return result
+    except Exception as e:
+        print(e)
+        result["status"] = "failure"
+        result["reason"] = "Database connection error"
+        return result
+
+def add_to_posted(message_id):
+    message_id = str(message_id)
+    timenow = str(time.time())
+    result = {}
+    try:
+        lc_db = mysql.connector.connect(
+            host = mysql_host,
+            user = mysql_user,
+            password = mysql_password,
+            database = mysql_db
+        )
+        cursor = lc_db.cursor()
+        query = "INSERT INTO posted (message_id, time) VALUES (" + message_id + ", " + timenow + ")"
+        # print(query)
+        cursor.execute(query)
+        lc_db.commit()
+        cursor.close()
+        lc_db.close()
+        result["status"] = "success"
         return result
     except Exception as e:
         print(e)
