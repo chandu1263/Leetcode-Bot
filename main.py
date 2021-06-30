@@ -1,11 +1,13 @@
 import os
 import discord
+import time
 
 from parser import parse, get_username
 from database import *
-from bot_embeds import get_question_embed
+from bot_embeds import get_question_embed, get_leaderboard_embed, get_help_embed
 
 client = discord.Client()
+posted_questions = {}
 
 @client.event
 async def on_ready():
@@ -23,6 +25,10 @@ async def on_message(message):
 		
 		if command[0] == "ping":
 			await message.channel.send("pong!")
+			return
+		
+		if command[0] == "help":
+			await message.channel.send(embed=get_help_embed())
 			return
 
 		if command[0] == "register": #reigster request
@@ -106,8 +112,80 @@ async def on_message(message):
 
 			with open("temp/posted.txt", "a") as f:
 				f.write(str(result["question"]) + "\n")
-			add_to_posted(message.id)
-			await message.channel.send(embed=get_question_embed(result["question"], result["intro"], result["level"], result["acceptance"], result["points"]))
+			posted_question = await message.channel.send(embed=get_question_embed(result["question"], result["intro"], result["level"], result["acceptance"], result["points"]))
+			add_to_posted(posted_question.id, result["question"])
+			posted_questions[posted_question.id] = time.time()
+			await posted_question.add_reaction("👍")
+			await posted_question.add_reaction("✅")
+			await posted_question.add_reaction("🖐️")
 			return 
+
+		if command[0] == "leaderboard":
+
+			if len(command) > 1:
+				await message.channel.send("Invalid request!")
+				return
+
+			await message.channel.send(get_leaderboard_embed())
+			return
+			
+
+
+@client.event
+async def on_raw_reaction_add(payload):
+	
+	if payload.member == client.user:
+		return
+
+	for message_id in posted_questions:
+		if time.time() - posted_questions[message_id] > 86400*4:
+			print("removing message ", message_id)
+			posted_questions.pop(message_id)
+	
+	if payload.message_id in posted_questions:
+		result = get_questionid_from_posted(payload.message_id)
+		if result["status"] == "failure":
+			await message.channel.send("Bot is down, please reach out to bot owner")
+			return
+		question_id = result["question_id"]
+		
+		if not is_user_in_users(payload.user_id):
+			user = await client.fetch_user(int(payload.user_id))
+			dmchannel = await user.create_dm()
+			await dmchannel.send("please register yourself by sending !lc register <username> before solving")
+			return
+
+		if payload.emoji.name == '👍':
+			result = add_to_attempted(payload.user_id, question_id)
+			if result["status"] == "failure":
+				print(result["reason"])
+				return
+			result = add_attempted_for_user(payload.user_id)
+			if result["status"] == "failure":
+				print(result["reason"])
+				return
+			add_points_to_user(payload.user_id, 1)
+			return
+
+		if payload.emoji.name == '✅':
+			result = add_to_solved(payload.user_id, question_id)
+			if result["status"] == "failure":
+				print(result["reason"])
+				return
+			result = add_solved_for_user(payload.user_id)
+			if result["status"] == "failure":
+				print(result["reason"])
+				return
+			result = get_points_for_question(question_id)
+			if result["status"] == "failure":
+				print(result["reason"])
+				return
+			add_points_to_user(payload.user_id, result["points"])
+			return
+		
+		if payload.emoji.name == '🖐️':
+			print(payload.user_id, "needs help", payload.message_id)
+			return
+
 
 client.run(os.getenv('TOKEN'))
