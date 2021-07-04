@@ -6,7 +6,7 @@ from tabulate import tabulate
 from database import *
 from s3_file_handler import S3_file_handler
 
-def get_question_embed(id, intro, level, acceptance, points):
+def get_question_embed(id, intro, level, acceptance, points, url="https://www.geeksforgeeks.org/"):
     def get_description(id):
         description = ""
         s3_file_handler = S3_file_handler()
@@ -20,6 +20,7 @@ def get_question_embed(id, intro, level, acceptance, points):
     embed.add_field(name="level", value=level)
     embed.add_field(name="acceptance", value=acceptance)
     embed.add_field(name="points", value=points)
+    embed.add_field(name="link", value=url)
     embed.add_field(name="reactions", value="attempt the question by reacting 👍 and if you have solved it, react ✅")
     embed.add_field(name="help", value="🖐️ will alert the moderators and you will be provided help")
     return embed

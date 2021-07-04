@@ -112,7 +112,7 @@ async def on_message(message):
 
 			with open("temp/posted.txt", "a") as f:
 				f.write(str(result["question"]) + "\n")
-			posted_question = await message.channel.send(embed=get_question_embed(result["question"], result["intro"], result["level"], result["acceptance"], result["points"]))
+			posted_question = await message.channel.send(embed=get_question_embed(result["question"], result["intro"], result["level"], result["acceptance"], result["points"], result["url"]))
 			add_to_posted(posted_question.id, result["question"])
 			posted_questions[posted_question.id] = time.time()
 			await posted_question.add_reaction("👍")
