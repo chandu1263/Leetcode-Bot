@@ -52,6 +52,7 @@ Reacting ✅ to the question posted by moderator indicates that the particular u
 - [ ] Self stats for each user
 - [ ] Make markdown operators in the question as characters
 - [ ] Moderator can add question to the database
+- [ ] Help reaction
 
 ## TECH STACK
 
